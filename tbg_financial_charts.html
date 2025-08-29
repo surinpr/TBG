@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TBG COCO @ Chiang Mai - Investment Analysis Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+            line-height: 1.6;
+        }
+        
+        .dashboard {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2.5rem;
+            background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(5, 150, 105, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+            transform: translateX(-100%);
+            animation: shimmer 3s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: -0.02em;
+        }
+        
+        .header .subtitle {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+        
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .kpi-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            padding: 2rem;
+            border-radius: 16px;
+            border: 1px solid #475569;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            border-color: #10b981;
+        }
+        
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+        
+        .kpi-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+        
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #f8fafc;
+            margin-bottom: 0.25rem;
+            line-height: 1;
+        }
+        
+        .kpi-subtitle {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+        
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .chart-panel {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid #475569;
+            backdrop-filter: blur(20px);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .chart-panel:hover {
+            border-color: #10b981;
+            box-shadow: 0 20px 40px rgba(16, 185, 129, 0.1);
+        }
+        
+        .chart-panel.full-width {
+            grid-column: span 12;
+        }
+        
+        .chart-panel.half-width {
+            grid-column: span 6;
+        }
+        
+        .chart-panel.third-width {
+            grid-column: span 4;
+        }
+        
+        .chart-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .chart-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #10b981, #34d399);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+        
+        .chart-wrapper.compact {
+            height: 320px;
+        }
+        
+        .risk-panel {
+            grid-column: span 12;
+            background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
+            border: 1px solid #dc2626;
+            margin-top: 2rem;
+        }
+        
+        .risk-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .risk-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .risk-item {
+            background: rgba(0,0,0,0.2);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid #fbbf24;
+        }
+        
+        .risk-item h4 {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #fef3c7;
+        }
+        
+        .risk-item p {
+            color: #fde68a;
+            font-size: 0.875rem;
+        }
+        
+        @media (max-width: 1024px) {
+            .chart-panel.half-width,
+            .chart-panel.third-width {
+                grid-column: span 12;
+            }
+            
+            .kpi-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .dashboard {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .charts-container {
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <header class="header">
+            <h1>TBG COCO @ Chiang Mai</h1>
+            <p class="subtitle">Premium Senior Care Investment Analysis Dashboard</p>
+        </header>
+
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-title">Internal Rate of Return</div>
+                <div class="kpi-value">25.0<span style="font-size: 1.5rem;">%</span></div>
+                <div class="kpi-subtitle">20-Year Projection</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Net Present Value</div>
+                <div class="kpi-value">313.5<span style="font-size: 1.5rem;">M</span></div>
+                <div class="kpi-subtitle">THB Million</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Payback Period</div>
+                <div class="kpi-value">2.4<span style="font-size: 1.5rem;">Y</span></div>
+                <div class="kpi-subtitle">Years</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Total Investment</div>
+                <div class="kpi-value">150<span style="font-size: 1.5rem;">M</span></div>
+                <div class="kpi-subtitle">THB Million</div>
+            </div>
+        </div>
+
+        <div class="charts-container">
+            <div class="chart-panel full-width">
+                <div class="chart-title">
+                    <div class="chart-icon">📈</div>
+                    20-Year Cash Flow Projection
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="cashFlowChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-panel half-width">
+                <div class="chart-title">
+                    <div class="chart-icon">💰</div>
+                    Revenue Structure (Year 1)
+                </div>
+                <div class="chart-wrapper compact">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-panel half-width">
+                <div class="chart-title">
+                    <div class="chart-icon">💸</div>
+                    Operating Cost Breakdown
+                </div>
+                <div class="chart-wrapper compact">
+                    <canvas id="costChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-panel third-width">
+                <div class="chart-title">
+                    <div class="chart-icon">📊</div>
+                    IRR & NPV Timeline
+                </div>
+                <div class="chart-wrapper compact">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-panel third-width">
+                <div class="chart-title">
+                    <div class="chart-icon">⚖️</div>
+                    Sensitivity Analysis
+                </div>
+                <div class="chart-wrapper compact">
+                    <canvas id="sensitivityChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-panel third-width">
+                <div class="chart-title">
+                    <div class="chart-icon">🏠</div>
+                    Occupancy Forecast
+                </div>
+                <div class="chart-wrapper compact">
+                    <canvas id="occupancyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-panel full-width">
+                <div class="chart-title">
+                    <div class="chart-icon">📉</div>
+                    Investment Returns Comparison
+                </div>
+                <div class="chart-wrapper compact">
+                    <canvas id="returnsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced Chart.js configuration
+        Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        Chart.defaults.font.size = 11;
+        Chart.defaults.color = '#e2e8f0';
+        Chart.defaults.borderColor = '#475569';
+        Chart.defaults.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+
+        // Premium color palette
+        const palette = {
+            primary: '#10b981',
+            secondary: '#34d399',
+            accent: '#6ee7b7',
+            warning: '#f59e0b',
+            danger: '#ef4444',
+            info: '#3b82f6',
+            purple: '#8b5cf6',
+            pink: '#ec4899',
+            gradients: [
+                'linear-gradient(135deg, #10b981, #34d399)',
+                'linear-gradient(135deg, #3b82f6, #60a5fa)',
+                'linear-gradient(135deg, #8b5cf6, #a78bfa)',
+                'linear-gradient(135deg, #f59e0b, #fbbf24)',
+                'linear-gradient(135deg, #ef4444, #f87171)',
+                'linear-gradient(135deg, #ec4899, #f472b6)'
+            ]
+        };
+
+        // 1. Enhanced Cash Flow Chart
+        const cashFlowChart = new Chart(document.getElementById('cashFlowChart'), {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 20}, (_, i) => `Year ${i + 1}`),
+                datasets: [
+                    {
+                        label: 'Annual Net Cash Flow (THB Million)',
+                        data: [38.2, 138.5, -25.1, 27.9, 31.9, 31.9, 34.0, 34.0, 35.3, 35.3, 36.2, 36.5, 36.5, 29.6, 36.5, 36.5, 36.5, 36.5, 36.5, 36.5],
+                        borderColor: palette.primary,
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: palette.primary,
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4
+                    },
+                    {
+                        label: 'Cumulative Cash Flow (THB Million)',
+                        data: [38.2, 176.7, 151.6, 179.5, 211.4, 243.3, 277.3, 311.3, 346.6, 381.9, 418.1, 454.6, 491.1, 520.7, 557.2, 593.7, 630.2, 666.7, 703.2, 739.7],
+                        borderColor: palette.info,
+                        backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                        borderWidth: 2,
+                        borderDash: [8, 4],
+                        fill: false,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: { weight: 600 }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(71, 85, 105, 0.3)' },
+                        ticks: { color: '#94a3b8' }
+                    },
+                    y: {
+                        grid: { color: 'rgba(71, 85, 105, 0.3)' },
+                        ticks: { 
+                            color: '#94a3b8',
+                            callback: function(value) { return value + 'M'; }
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        });
+
+        // 2. Revenue Structure Chart
+        new Chart(document.getElementById('revenueChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Pool Villa Sales', 'Accommodation', 'Day Care Services', 'Wellness & Spa', 'Other Services'],
+                datasets: [{
+                    data: [80, 40.3, 32.9, 6.7, 6.7],
+                    backgroundColor: [palette.danger, palette.primary, palette.secondary, palette.info, palette.warning],
+                    borderWidth: 3,
+                    borderColor: '#1e293b',
+                    hoverBorderWidth: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: { size: 10 }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+
+        // 3. Cost Structure Chart
+        new Chart(document.getElementById('costChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Core Care & Medical', 'Food & Nutrition', 'Admin & Personnel', 'Marketing & Development', 'Operations & Utilities', 'Others'],
+                datasets: [{
+                    data: [25.6, 19.2, 13.6, 12.0, 9.6, 20.0],
+                    backgroundColor: [palette.primary, palette.secondary, palette.accent, palette.info, palette.warning, palette.purple],
+                    borderWidth: 3,
+                    borderColor: '#1e293b'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true,
+                            font: { size: 9 }
+                        }
+                    }
+                },
+                cutout: '50%'
+            }
+        });
+
+        // 4. Performance Timeline Chart
+        new Chart(document.getElementById('performanceChart'), {
+            type: 'line',
+            data: {
+                labels: ['5 Years', '10 Years', '20 Years'],
+                datasets: [
+                    {
+                        label: 'IRR (%)',
+                        data: [10.2, 21.9, 25.0],
+                        borderColor: palette.primary,
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'NPV (THB Million)',
+                        data: [150.7, 228.9, 313.5],
+                        borderColor: palette.info,
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 3,
+                        borderDash: [5, 5],
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { usePointStyle: true }
+                    }
+                },
+                scales: {
+                    x: { grid: { color: 'rgba(71, 85, 105, 0.3)' } },
+                    y: { grid: { color: 'rgba(71, 85, 105, 0.3)' } }
+                }
+            }
+        });
+
+        // 5. Sensitivity Analysis Chart
+        new Chart(document.getElementById('sensitivityChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Occupancy -10%', 'Price -10%', 'Cost +10%', 'Villa Delay', 'Base Case'],
+                datasets: [{
+                    label: 'NPV Impact (THB Million)',
+                    data: [180, 220, 250, 150, 313.5],
+                    backgroundColor: [palette.danger, palette.warning, palette.warning, palette.danger, palette.primary],
+                    borderColor: [palette.danger, palette.warning, palette.warning, palette.danger, palette.primary],
+                    borderWidth: 2,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { 
+                        grid: { color: 'rgba(71, 85, 105, 0.3)' },
+                        ticks: { maxRotation: 45 }
+                    },
+                    y: { 
+                        grid: { color: 'rgba(71, 85, 105, 0.3)' },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // 6. Occupancy Forecast Chart
+        new Chart(document.getElementById('occupancyChart'), {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 10}, (_, i) => `Y${i + 1}`),
+                datasets: [
+                    {
+                        label: 'TBG Projection',
+                        data: [70, 70, 80, 80, 80, 85, 85, 85, 85, 90],
+                        borderColor: palette.primary,
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Industry Average',
+                        data: [35, 45, 55, 65, 70, 72, 74, 75, 76, 77],
+                        borderColor: palette.warning,
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        fill: false
+                    },
+                    {
+                        label: 'Risk Threshold',
+                        data: Array(10).fill(50),
+                        borderColor: palette.danger,
+                        borderWidth: 1,
+                        borderDash: [10, 5],
+                        pointRadius: 0,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { usePointStyle: true }
+                    }
+                },
+                scales: {
+                    x: { grid: { color: 'rgba(71, 85, 105, 0.3)' } },
+                    y: {
+                        min: 0,
+                        max: 100,
+                        grid: { color: 'rgba(71, 85, 105, 0.3)' },
+                        ticks: { callback: function(value) { return value + '%'; } }
+                    }
+                }
+            }
+        });
+
+        // 7. Investment Returns Comparison Chart
+        new Chart(document.getElementById('returnsChart'), {
+            type: 'radar',
+            data: {
+                labels: ['IRR', 'NPV', 'Cash Flow Stability', 'Risk Level', 'Market Potential', 'Scalability'],
+                datasets: [
+                    {
+                        label: 'TBG COCO Project',
+                        data: [85, 90, 60, 40, 80, 70],
+                        borderColor: palette.primary,
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        borderWidth: 3,
+                        pointBackgroundColor: palette.primary,
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2
+                    },
+                    {
+                        label: 'Industry Benchmark',
+                        data: [60, 65, 80, 70, 60, 65],
+                        borderColor: palette.info,
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointBackgroundColor: palette.info
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { usePointStyle: true }
+                    }
+                },
+                scales: {
+                    r: {
+                        min: 0,
+                        max: 100,
+                        grid: { color: 'rgba(71, 85, 105, 0.3)' },
+                        angleLines: { color: 'rgba(71, 85, 105, 0.3)' },
+                        pointLabels: { color: '#94a3b8', font: { size: 11 } }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
